@@ -1,0 +1,38 @@
+# Two Mess3 factors with a tunable interaction: factor 1's dynamics depend on the *hidden state*
+# of factor 0. For each state c of factor 0, factor 1 uses (1 - eps) * base + eps * variant[c],
+# where variant[c] is the base process with its tokens cyclically relabelled by c. Because the
+# controlling state is unobserved, beliefs are entangled and a factored representation is lossy.
+#
+# The loss a factored solution gives up is in reference.json -> "factored". For these
+# parameters it is roughly 3e-5 (eps 0.1), 2e-4 (0.3), 1e-3 (0.6), 6e-3 (1.0) nats/token.
+# With Shai et al.'s factor parameters (x 0.15, alpha 0.6) it is about 5-30x smaller.
+#
+# Set `control: token` to make factor 0's emitted sub-token the controller instead (the
+# dependency chain of Shai et al. 2026, Sec. 4.2): beliefs then still factorise exactly.
+name: factored_coupling
+process:
+  type: product
+  factors:
+    - {type: mess3, x: 0.1, alpha: 0.8}
+    - {type: mess3, x: 0.1, alpha: 0.8}
+  couplings:
+    - controller: 0
+      target: 1
+      control: state
+      eps: 0.6
+      variants:            # one per hidden state of factor 0
+        - {type: mess3, x: 0.1, alpha: 0.8}
+        - {type: relabel, perm: [1, 2, 0], process: {type: mess3, x: 0.1, alpha: 0.8}}
+        - {type: relabel, perm: [2, 0, 1], process: {type: mess3, x: 0.1, alpha: 0.8}}
+data: {ctx_len: 16, bos: true, batch_size: 2048}
+model:
+  n_layers: 4
+  d_model: 120
+  n_heads: 3
+  d_mlp: 480
+  act: gelu
+  norm: layernorm
+  pos: learned
+  init_std: 0.02
+train: {n_seeds: 4, steps: 20000, optimizer: adam, lr: 5.0e-4, log_every: 100}
+eval: {n_sequences: 4096, dense_until: 50, per_decade: 20}

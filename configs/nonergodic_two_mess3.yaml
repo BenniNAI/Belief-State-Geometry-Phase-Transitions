@@ -1,0 +1,30 @@
+# Replication of Ray, Riechers & Shai (2026), "The geometry of nonergodic composition":
+# two Mess3 sources mixed 50/50; each sequence (BOS + tokens) comes from a single source.
+# Model and optimiser from the post's appendix: 4 layers, d_model 128, 4 heads of dim 32,
+# gated GELU MLP 512, RMSNorm, rotary positions, context 128, init std 0.02,
+# AdamW lr 1e-3 without weight decay, batch 512. They report near-optimal loss by step 10k
+# and show the step-45k checkpoint.
+#
+# Order parameters: KL to `frozen_source` (no source inference) and probe R^2 for `weights`
+# and `belief` (the telescoping cones, w_n * eta_n).
+name: nonergodic_two_mess3
+process:
+  type: nonergodic
+  weights: [0.5, 0.5]
+  components:
+    - {type: mess3, x: 0.15, alpha: 0.6}
+    - {type: mess3, x: 0.5, alpha: 0.66}
+data: {ctx_len: 128, bos: true, batch_size: 512}
+model:
+  n_layers: 4
+  d_model: 128
+  n_heads: 4
+  d_head: 32
+  d_mlp: 512
+  act: gated_gelu
+  norm: rmsnorm
+  pos: rotary
+  init_std: 0.02
+# grad_accum 2 keeps training memory near 6 GB (about 12 GB without it); use 1 on large GPUs.
+train: {n_seeds: 2, steps: 50000, optimizer: adamw, lr: 1.0e-3, weight_decay: 0.0, log_every: 100, grad_accum: 2}
+eval: {n_sequences: 1024, dense_until: 50, per_decade: 20, probe_rows: 50000}

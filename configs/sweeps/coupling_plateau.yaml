@@ -1,0 +1,11 @@
+# Plateau length at the factored solution vs hidden-state coupling strength eps, at two
+# learning rates (report time in lr * steps too: see transitions_factored.csv).
+# Analyse with:  python -m bsg.summarize runs/coupling_plateau --ref factored --x process.couplings.0.eps
+base: ../factored_coupling.yaml
+name: coupling_plateau
+set:
+  train.steps: 30000
+  train.n_seeds: 8
+grid:
+  process.couplings.0.eps: [0.1, 0.2, 0.3, 0.45, 0.6, 0.8, 1.0]
+  train.lr: [2.5e-4, 5.0e-4]

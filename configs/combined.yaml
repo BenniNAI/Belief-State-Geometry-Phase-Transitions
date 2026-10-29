@@ -1,0 +1,56 @@
+# The combined experiment: K = 2 sources (nonergodic mixture), each a product of N = 2 Mess3
+# factors with a hidden-state interaction of strength eps (same in both sources). Two
+# transitions can occur:
+#   source identification   order parameters: KL to `frozen_source`, probe R^2 for `weights`
+#   un-factoring            order parameters: KL to `factored`, R^2 `source_factors` vs `belief`
+# `factored_frozen` is the predictor that does neither.
+#
+# Knobs: eps (interaction strength) and source 1's factor-0 x (source distinguishability;
+# x = 0.1 makes the sources identical). With eps 0.5 and x 0.15 the two loss gaps are similar
+# (~4e-4 un-factoring, ~2.4e-4 source identification), close to where the order may flip.
+# sweeps/combined_phase_diagram.yaml varies both.
+name: combined
+process:
+  type: nonergodic
+  weights: [0.5, 0.5]
+  components:
+    - type: product
+      factors:
+        - {type: mess3, x: 0.1, alpha: 0.8}
+        - {type: mess3, x: 0.1, alpha: 0.8}
+      couplings:
+        - controller: 0
+          target: 1
+          control: state
+          eps: 0.5
+          variants:
+            - {type: mess3, x: 0.1, alpha: 0.8}
+            - {type: relabel, perm: [1, 2, 0], process: {type: mess3, x: 0.1, alpha: 0.8}}
+            - {type: relabel, perm: [2, 0, 1], process: {type: mess3, x: 0.1, alpha: 0.8}}
+    - type: product
+      factors:
+        - {type: mess3, x: 0.15, alpha: 0.8}
+        - {type: mess3, x: 0.1, alpha: 0.8}
+      couplings:
+        - controller: 0
+          target: 1
+          control: state
+          eps: 0.5
+          variants:
+            - {type: mess3, x: 0.1, alpha: 0.8}
+            - {type: relabel, perm: [1, 2, 0], process: {type: mess3, x: 0.1, alpha: 0.8}}
+            - {type: relabel, perm: [2, 0, 1], process: {type: mess3, x: 0.1, alpha: 0.8}}
+data: {ctx_len: 64, bos: true, batch_size: 512}
+model:
+  n_layers: 4
+  d_model: 128
+  n_heads: 4
+  d_head: 32
+  d_mlp: 512
+  act: gated_gelu
+  norm: rmsnorm
+  pos: rotary
+  init_std: 0.02
+# grad_accum 2 keeps training memory near 7 GB (about 14 GB without it); use 1 on large GPUs.
+train: {n_seeds: 4, steps: 30000, optimizer: adamw, lr: 1.0e-3, log_every: 100, grad_accum: 2}
+eval: {n_sequences: 1024, dense_until: 50, per_decade: 20}

@@ -1,0 +1,18 @@
+# RRXOR experiment of Shai et al. (2024): 36 belief states in a 4-simplex, many with identical
+# next-token predictions. The geometry is spread across layers: compare probe R^2 for
+# layer "concat" with the individual layers.
+name: rrxor_replication
+process: {type: rrxor}
+data: {ctx_len: 10, bos: false, batch_size: 64}
+model:
+  n_layers: 4
+  d_model: 64
+  n_heads: 1
+  d_head: 8
+  d_mlp: 256
+  act: relu
+  norm: layernorm
+  pos: learned
+  init_std: 0.1
+train: {n_seeds: 4, steps: 1000000, optimizer: sgd, lr: 0.01, log_every: 1000}
+eval: {n_sequences: 4096, dense_until: 20, per_decade: 15}

@@ -1,0 +1,34 @@
+# Factored process with a noisy channel, after Shai et al. (2026), "Transformers learn factored
+# representations", Sec. 4.3 / Fig. 4: with probability `noise` (their epsilon) the emitted joint
+# token is replaced by a uniformly random other token, which entangles the factors.
+# The paper used three Mess3 factors (x=0.15, alpha=0.6) plus two Bloch-walk factors (GHMMs,
+# not implemented here). Model and optimiser follow the paper: 4 layers, 3 heads, d_model 120,
+# d_mlp 480, context 8 + BOS, Adam 5e-4, batch 25000. The paper does not state the init.
+#
+# Order parameters to watch: KL to the `factored` reference (plateau), probe R^2 for `factors`
+# vs `belief`, and n95 (factored ~ 2 dims per factor = 6, joint up to 26).
+#
+# Note: with these factor parameters the best factored predictor is only ~3e-6 (noise 0.1) to
+# ~8e-6 (noise 0.3) nats/token worse than Bayes, so there is very little loss pressure to leave
+# the factored solution. Sharper factors (x 0.05, alpha 0.85) raise this to ~3e-3 / 7e-3.
+name: factored_noise
+process:
+  type: product
+  factors:
+    - {type: mess3, x: 0.15, alpha: 0.6}
+    - {type: mess3, x: 0.15, alpha: 0.6}
+    - {type: mess3, x: 0.15, alpha: 0.6}
+  noise: 0.1
+data: {ctx_len: 8, bos: true, batch_size: 25000}
+model:
+  n_layers: 4
+  d_model: 120
+  n_heads: 3
+  d_mlp: 480
+  act: gelu
+  norm: layernorm
+  pos: learned
+  init_std: 0.02
+# grad_accum 4 keeps training memory near 6 GB (about 20 GB without it); use 1 on large GPUs.
+train: {n_seeds: 2, steps: 5000, optimizer: adam, lr: 5.0e-4, log_every: 50, grad_accum: 4}
+eval: {n_sequences: 8192, dense_until: 50, per_decade: 20}

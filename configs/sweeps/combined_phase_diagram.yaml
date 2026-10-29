@@ -1,0 +1,13 @@
+# Which transition comes first? Interaction strength (tied across both sources) vs source
+# distinguishability (source 1's factor-0 x; 0.1 would make the sources identical).
+# For each run compare the exit times at `factored` and `frozen_source`:
+#   python -m bsg.summarize runs/combined_phase_diagram --ref factored
+#   python -m bsg.summarize runs/combined_phase_diagram --ref frozen_source
+base: ../combined.yaml
+name: combined_phase_diagram
+set:
+  train.steps: 30000
+  train.n_seeds: 4
+grid:
+  "process.components.0.couplings.0.eps,process.components.1.couplings.0.eps": [0.3, 0.5, 0.7, 1.0]
+  process.components.1.factors.0.x: [0.12, 0.15, 0.2, 0.25]

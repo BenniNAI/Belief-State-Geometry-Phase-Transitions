@@ -1,0 +1,19 @@
+# Replication of Shai et al. (2024), "Transformers represent belief state geometry in their
+# residual stream", App. A.6: 4 layers, d_model 64, 1 head of dim 8, MLP 256, ReLU, LayerNorm,
+# context 10 (no BOS; initial belief = stationary distribution), SGD lr 0.01, batch 64,
+# 1,000,000 steps on freshly sampled sequences. Expect the fractal in the final layer.
+name: mess3_replication
+process: {type: mess3, x: 0.05, alpha: 0.85}
+data: {ctx_len: 10, bos: false, batch_size: 64}
+model:
+  n_layers: 4
+  d_model: 64
+  n_heads: 1
+  d_head: 8
+  d_mlp: 256
+  act: relu
+  norm: layernorm
+  pos: learned
+  init_std: 0.1        # TransformerLens default 0.8 / sqrt(d_model)
+train: {n_seeds: 4, steps: 1000000, optimizer: sgd, lr: 0.01, log_every: 1000}
+eval: {n_sequences: 4096, dense_until: 20, per_decade: 15}
