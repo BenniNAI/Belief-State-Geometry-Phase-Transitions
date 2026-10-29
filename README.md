@@ -43,7 +43,7 @@ python -m bsg.plot geometry runs/mess3_replication --target belief   # across tr
 python -m bsg.plot layers   runs/mess3_replication --target belief   # one checkpoint, layer by layer
 ```
 
-`geometry` takes `--layer concat` (default), `--layer final`, or a layer index (`0` = embeddings, `k` = after block k).
+`geometry` takes `--layer concat` (default), `--layer final`, or a layer index (`0` = embeddings, `k` = after block k). Examples of each plot, from short test runs, are in [docs/example_plots](docs/example_plots/README.md).
 
 Any config value can be overridden from the command line with dotted keys, including inside the process spec:
 
@@ -146,6 +146,7 @@ bsg/sweep.py       grids of runs
 bsg/plot.py        curves and geometry figures
 bsg/summarize.py   plateau / transition times across runs
 configs/           experiment configs; configs/sweeps/ grids
+docs/example_plots/  example figures from short test runs
 tests/             pytest suite
 ```
 
